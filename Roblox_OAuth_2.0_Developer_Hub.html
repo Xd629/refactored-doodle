@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="pl" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roblox OAuth 2.0 Portal & Integration Suite</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        rbx: {
+                            dark: '#000000',
+                            card: '#191B1F',
+                            panel: '#23252B',
+                            border: '#393B43',
+                            accent: '#00A2FF',
+                            accentHover: '#0084D1',
+                            red: '#FF2A55',
+                            green: '#10B981',
+                            gold: '#FFB800'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #0F1015; color: #E3E5E8; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #191B1F; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #393B43; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #00A2FF; }
+        .glow-blue { box-shadow: 0 0 20px rgba(0, 162, 255, 0.25); }
+        .glow-green { box-shadow: 0 0 20px rgba(16, 185, 129, 0.25); }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen flex flex-col justify-between selection:bg-rbx-accent selection:text-white">
+
+    <!-- Navigation Bar -->
+    <header class="bg-rbx-card border-b border-rbx-border sticky top-0 z-50 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 bg-rbx-accent rounded-lg flex items-center justify-center text-white font-black text-xl shadow-lg transform rotate-3">
+                    R
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-white leading-tight flex items-center gap-2">
+                        Roblox OAuth 2.0 <span class="text-xs font-mono bg-rbx-accent/20 text-rbx-accent px-2 py-0.5 rounded border border-rbx-accent/30">v1.1</span>
+                    </h1>
+                    <p class="text-xs text-gray-400">Portal Deweloperski & Symulator Logowania</p>
+                </div>
+            </div>
+
+            <!-- Header Status Badge -->
+            <div id="authStatusHeader" class="flex items-center space-x-3">
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                    <span class="w-2 h-2 mr-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                    Niezalogowany
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Sidebar Navigation -->
+        <div class="lg:col-span-3 space-y-4">
+            <div class="bg-rbx-card border border-rbx-border rounded-xl p-3 shadow-lg">
+                <nav class="space-y-1">
+                    <button onclick="switchTab('dashboard')" id="nav-dashboard" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors bg-rbx-accent text-white">
+                        <i class="fa-solid fa-user-shield w-5 text-center"></i>
+                        <span>Profil i Sesja</span>
+                    </button>
+                    <button onclick="switchTab('playground')" id="nav-playground" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-gray-400 hover:text-white hover:bg-rbx-panel">
+                        <i class="fa-solid fa-flask w-5 text-center"></i>
+                        <span>Playground OAuth 2.0</span>
+                    </button>
+                    <button onclick="switchTab('code')" id="nav-code" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-gray-400 hover:text-white hover:bg-rbx-panel">
+                        <i class="fa-solid fa-code w-5 text-center"></i>
+                        <span>Generator Kodów</span>
+                    </button>
+                    <button onclick="switchTab('config')" id="nav-config" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-gray-400 hover:text-white hover:bg-rbx-panel">
+                        <i class="fa-solid fa-key w-5 text-center"></i>
+                        <span>Konfiguracja App ID</span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Environment Notice Card -->
+            <div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 text-xs text-amber-300 space-y-2">
+                <div class="font-bold flex items-center gap-1.5 text-amber-400">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>Uwaga nt. Środowiska Gemini</span>
+                </div>
+                <p class="text-[11px] leading-relaxed">
+                    Ze względów bezpieczeństwa Roblox blokuje logowanie wewnątrz ramki `iframe`. Przycisk <b>Zaloguj (Live)</b> otwiera teraz zewnętrzną kartę.
+                </p>
+            </div>
+
+            <!-- Application Info Card -->
+            <div class="bg-rbx-card border border-rbx-border rounded-xl p-4 space-y-3">
+                <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Aplikacja Roblox</h3>
+                <div class="space-y-2 text-xs">
+                    <div>
+                        <span class="text-gray-500">Client ID:</span>
+                        <div class="font-mono bg-rbx-panel p-1.5 rounded mt-1 text-gray-300 border border-rbx-border truncate select-all" id="sidebarClientId">6383567947279826865</div>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Redirect URI:</span>
+                        <div class="font-mono bg-rbx-panel p-1.5 rounded mt-1 text-gray-300 border border-rbx-border truncate select-all" id="sidebarRedirectUri">http://localhost:3000/oauth/callback</div>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Uprawnienia (Scopes):</span>
+                        <div class="flex flex-wrap gap-1 mt-1">
+                            <span class="bg-rbx-accent/10 text-rbx-accent border border-rbx-accent/20 px-1.5 py-0.5 rounded text-[10px]">openid</span>
+                            <span class="bg-rbx-accent/10 text-rbx-accent border border-rbx-accent/20 px-1.5 py-0.5 rounded text-[10px]">profile</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Views Container -->
+        <div class="lg:col-span-9 space-y-6">
+
+            <!-- TAB 1: PROFILE / DASHBOARD -->
+            <div id="tab-dashboard-view" class="tab-content space-y-6">
+                <!-- Auth Hero Banner -->
+                <div id="loggedOutState" class="bg-gradient-to-br from-rbx-card via-rbx-panel to-rbx-card border border-rbx-border rounded-2xl p-8 text-center space-y-6 relative overflow-hidden">
+                    <div class="absolute -top-24 -right-24 w-64 h-64 bg-rbx-accent/10 rounded-full blur-3xl pointer-events-none"></div>
+                    <div class="w-16 h-16 bg-rbx-accent/10 border border-rbx-accent/30 text-rbx-accent rounded-2xl flex items-center justify-center mx-auto text-3xl shadow-inner">
+                        <i class="fa-solid fa-user-lock"></i>
+                    </div>
+                    <div class="max-w-md mx-auto space-y-2">
+                        <h2 class="text-2xl font-bold text-white">Zaloguj się kontem Roblox</h2>
+                        <p class="text-sm text-gray-400">
+                            Przetestuj bezpieczne logowanie OAuth 2.0 z obsługą PKCE lub skorzystaj z symulatora wbudowanego w podgląd.
+                        </p>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                        <button onclick="startOAuthFlow()" class="w-full sm:w-auto bg-rbx-accent hover:bg-rbx-accentHover text-white font-semibold px-6 py-3 rounded-xl transition flex items-center justify-center space-x-2 shadow-lg glow-blue">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                            <span>Zaloguj przez Roblox (Nowa Karta)</span>
+                        </button>
+                        <button onclick="simulateMockLogin()" class="w-full sm:w-auto bg-rbx-panel hover:bg-rbx-border text-gray-200 font-medium px-5 py-3 rounded-xl border border-rbx-border transition flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i>
+                            <span>Symuluj Zalogowanie (Demo)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Logged In Dashboard (Hidden by default) -->
+                <div id="loggedInState" class="hidden space-y-6">
+                    <!-- User Header Banner -->
+                    <div class="bg-rbx-card border border-rbx-border rounded-2xl p-6 relative overflow-hidden flex flex-col md:flex-row items-center gap-6">
+                        <div class="relative">
+                            <img id="userAvatarImg" src="https://placehold.co/120x120/191b1f/00a2ff?text=Roblox+User" alt="Avatar" class="w-24 h-24 rounded-2xl border-2 border-rbx-accent bg-rbx-panel object-cover shadow-xl">
+                            <span class="absolute bottom-0 right-0 w-5 h-5 bg-rbx-green border-2 border-rbx-card rounded-full" title="Status: Zalogowany"></span>
+                        </div>
+                        <div class="space-y-1 text-center md:text-left flex-1">
+                            <div class="flex flex-wrap items-center justify-center md:justify-start gap-2">
+                                <h2 id="userDisplayName" class="text-2xl font-extrabold text-white">RobloxDeveloper</h2>
+                                <span class="bg-rbx-accent/20 text-rbx-accent border border-rbx-accent/30 text-xs px-2 py-0.5 rounded-full font-mono">Verified OAuth</span>
+                            </div>
+                            <p id="userUsername" class="text-sm font-mono text-gray-400">@roblox_dev_user</p>
+                            <div class="flex flex-wrap items-center justify-center md:justify-start gap-4 pt-2 text-xs text-gray-300">
+                                <div><i class="fa-solid fa-id-badge text-rbx-accent mr-1"></i> ID: <span id="userIdVal" class="font-mono text-gray-100">123456789</span></div>
+                                <div><i class="fa-solid fa-calendar-alt text-amber-400 mr-1"></i> Utworzono: <span id="userCreatedVal" class="text-gray-100">2021-04-12</span></div>
+                                <div><i class="fa-solid fa-coins text-rbx-gold mr-1"></i> Robux: <span id="userRobuxVal" class="font-mono font-bold text-rbx-gold">14,250</span></div>
+                            </div>
+                        </div>
+                        <button onclick="logout()" class="bg-rbx-red/10 border border-rbx-red/30 hover:bg-rbx-red/20 text-rbx-red px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-2">
+                            <i class="fa-solid fa-power-off"></i>
+                            <span>Wyloguj</span>
+                        </button>
+                    </div>
+
+                    <!-- User Stats & Token Info Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Token Details -->
+                        <div class="bg-rbx-card border border-rbx-border rounded-xl p-5 space-y-4">
+                            <h3 class="text-sm font-bold text-white flex items-center justify-between">
+                                <span><i class="fa-solid fa-key text-rbx-accent mr-2"></i>Szczegóły Access Tokena</span>
+                                <span class="text-[10px] bg-rbx-green/20 text-rbx-green border border-rbx-green/30 px-2 py-0.5 rounded">Aktywny</span>
+                            </h3>
+                            <div class="space-y-2 text-xs">
+                                <div>
+                                    <span class="text-gray-400">Access Token (Bearer):</span>
+                                    <div id="tokenDisplay" class="font-mono text-[11px] bg-rbx-panel p-2 rounded border border-rbx-border text-gray-300 break-all mt-1 max-h-20 overflow-y-auto custom-scrollbar">
+                                        rbx_at_demo_token_sample_abc123xyz
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 pt-1">
+                                    <div class="bg-rbx-panel p-2 rounded border border-rbx-border">
+                                        <div class="text-[10px] text-gray-500">Typ tokena</div>
+                                        <div class="font-semibold text-gray-200">Bearer</div>
+                                    </div>
+                                    <div class="bg-rbx-panel p-2 rounded border border-rbx-border">
+                                        <div class="text-[10px] text-gray-500">Ważność (Expires In)</div>
+                                        <div class="font-semibold text-gray-200" id="tokenExpiresVal">900 s (15m)</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- User Profile Badges / Attributes -->
+                        <div class="bg-rbx-card border border-rbx-border rounded-xl p-5 space-y-4">
+                            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-award text-amber-400"></i> Odznaki i Status Konta
+                            </h3>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="bg-rbx-panel p-3 rounded-lg border border-rbx-border flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-amber-400/10 text-amber-400 flex items-center justify-center text-sm">
+                                        <i class="fa-solid fa-shield-check"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs font-semibold text-white">Weryfikacja 2FA</div>
+                                        <div class="text-[10px] text-gray-400">Włączona</div>
+                                    </div>
+                                </div>
+                                <div class="bg-rbx-panel p-3 rounded-lg border border-rbx-border flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-rbx-accent/10 text-rbx-accent flex items-center justify-center text-sm">
+                                        <i class="fa-solid fa-crown"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs font-semibold text-white">Subskrypcja Premium</div>
+                                        <div class="text-[10px] text-gray-400">Roblox Premium 1000</div>
+                                    </div>
+                                </div>
+                                <div class="bg-rbx-panel p-3 rounded-lg border border-rbx-border flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-rbx-green/10 text-rbx-green flex items-center justify-center text-sm">
+                                        <i class="fa-solid fa-code"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs font-semibold text-white">Konto Dewelopera</div>
+                                        <div class="text-[10px] text-gray-400">Open Cloud Access</div>
+                                    </div>
+                                </div>
+                                <div class="bg-rbx-panel p-3 rounded-lg border border-rbx-border flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-purple-500/10 text-purple-400 flex items-center justify-center text-sm">
+                                        <i class="fa-solid fa-gamepad"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs font-semibold text-white">Moje Miejsca</div>
+                                        <div class="text-[10px] text-gray-400">12 Miejsc w Roblox</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: OAUTH PLAYGROUND -->
+            <div id="tab-playground-view" class="tab-content hidden space-y-6">
+                <div class="bg-rbx-card border border-rbx-border rounded-xl p-6 space-y-6">
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-diagram-project text-rbx-accent"></i> Visualizer Przepływu OAuth 2.0 PKCE
+                        </h2>
+                        <p class="text-xs text-gray-400 mt-1">Śledź krok po kroku generowanie wyzwania PKCE, kod autoryzacji oraz wymianę na token dostępowy.</p>
+                    </div>
+
+                    <!-- Flow Step Tracker -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3 text-center">
+                        <div id="step-1-box" class="p-3 bg-rbx-panel border-2 border-rbx-accent rounded-xl space-y-1">
+                            <div class="text-[10px] font-bold text-rbx-accent uppercase">Krok 1</div>
+                            <div class="text-xs font-semibold text-white">Generowanie PKCE</div>
+                            <div id="step-1-status" class="text-[10px] text-gray-400">Gotowy</div>
+                        </div>
+                        <div id="step-2-box" class="p-3 bg-rbx-panel border border-rbx-border rounded-xl space-y-1">
+                            <div class="text-[10px] font-bold text-gray-500 uppercase">Krok 2</div>
+                            <div class="text-xs font-semibold text-gray-300">Przekierowanie Roblox</div>
+                            <div id="step-2-status" class="text-[10px] text-gray-400">Oczekuje</div>
+                        </div>
+                        <div id="step-3-box" class="p-3 bg-rbx-panel border border-rbx-border rounded-xl space-y-1">
+                            <div class="text-[10px] font-bold text-gray-500 uppercase">Krok 3</div>
+                            <div class="text-xs font-semibold text-gray-300">Odbiór Authorization Code</div>
+                            <div id="step-3-status" class="text-[10px] text-gray-400">Oczekuje</div>
+                        </div>
+                        <div id="step-4-box" class="p-3 bg-rbx-panel border border-rbx-border rounded-xl space-y-1">
+                            <div class="text-[10px] font-bold text-gray-500 uppercase">Krok 4</div>
+                            <div class="text-xs font-semibold text-gray-300">Wymiana na UserInfo</div>
+                            <div id="step-4-status" class="text-[10px] text-gray-400">Oczekuje</div>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Inspector Box -->
+                    <div class="bg-rbx-panel rounded-xl border border-rbx-border p-4 space-y-4 font-mono text-xs">
+                        <div class="flex justify-between items-center border-b border-rbx-border pb-2">
+                            <span class="font-sans font-bold text-gray-200">Inspektor Parametrów PKCE & State</span>
+                            <button onclick="generateNewPKCE()" class="text-xs bg-rbx-border hover:bg-gray-700 text-gray-300 px-2.5 py-1 rounded transition">
+                                <i class="fa-solid fa-rotate mr-1"></i> Regeneruj PKCE
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <span class="text-gray-500">code_verifier (Sekret klienta):</span>
+                                <div id="pkceVerifierVal" class="bg-rbx-card p-2 rounded text-rbx-accent break-all mt-1 border border-rbx-border select-all">
+                                    -
+                                </div>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">code_challenge (SHA-256 Base64URL):</span>
+                                <div id="pkceChallengeVal" class="bg-rbx-card p-2 rounded text-rbx-green break-all mt-1 border border-rbx-border select-all">
+                                    -
+                                </div>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">state (Zabezpieczenie CSRF):</span>
+                                <div id="pkceStateVal" class="bg-rbx-card p-2 rounded text-amber-400 break-all mt-1 border border-rbx-border select-all">
+                                    -
+                                </div>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Adres Autoryzacji Roblox:</span>
+                                <div id="authUrlVal" class="bg-rbx-card p-2 rounded text-gray-300 truncate mt-1 border border-rbx-border select-all">
+                                    https://apis.roblox.com/oauth/v1/authorize
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Flow Controls -->
+                    <div class="flex flex-wrap items-center gap-3 pt-2">
+                        <button onclick="executeStepByStep()" class="bg-rbx-accent hover:bg-rbx-accentHover text-white px-5 py-2.5 rounded-lg font-medium text-xs transition flex items-center gap-2">
+                            <i class="fa-solid fa-play"></i>
+                            <span>Wykonaj Pełny Test Symulowany</span>
+                        </button>
+                        <button onclick="copyGeneratedAuthUrl()" class="bg-rbx-panel border border-rbx-border hover:bg-rbx-border text-gray-200 px-4 py-2.5 rounded-lg font-medium text-xs transition flex items-center gap-2">
+                            <i class="fa-solid fa-copy"></i>
+                            <span>Kopiuj URL Autoryzacyjny Roblox</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: CODE GENERATOR -->
+            <div id="tab-code-view" class="tab-content hidden space-y-6">
+                <div class="bg-rbx-card border border-rbx-border rounded-xl p-6 space-y-6">
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-code text-rbx-green"></i> Gotowy Kod Integracyjny z Twoimi Credentialami
+                        </h2>
+                        <p class="text-xs text-gray-400 mt-1">Wybierz język i skopiuj działający skrypt z wstawionym Client ID i Client Secret.</p>
+                    </div>
+
+                    <!-- Language Selector Tabs -->
+                    <div class="flex border-b border-rbx-border space-x-2">
+                        <button onclick="switchLang('node')" id="lang-btn-node" class="lang-tab font-mono text-xs px-4 py-2 border-b-2 border-rbx-accent text-rbx-accent font-semibold">Node.js (Express)</button>
+                        <button onclick="switchLang('python')" id="lang-btn-python" class="lang-tab font-mono text-xs px-4 py-2 text-gray-400 hover:text-white">Python (Flask)</button>
+                        <button onclick="switchLang('luau')" id="lang-btn-luau" class="lang-tab font-mono text-xs px-4 py-2 text-gray-400 hover:text-white">Luau (Roblox Studio)</button>
+                        <button onclick="switchLang('js')" id="lang-btn-js" class="lang-tab font-mono text-xs px-4 py-2 text-gray-400 hover:text-white">Browser JS (PKCE)</button>
+                    </div>
+
+                    <!-- Code Container -->
+                    <div class="relative">
+                        <pre class="bg-rbx-panel border border-rbx-border rounded-xl p-4 overflow-x-auto text-xs font-mono text-gray-200 leading-relaxed custom-scrollbar"><code id="codeSnippetBox">Loading code snippet...</code></pre>
+                        <button onclick="copyCurrentCodeSnippet()" class="absolute top-3 right-3 bg-rbx-card border border-rbx-border hover:bg-rbx-border text-gray-300 hover:text-white text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow">
+                            <i class="fa-solid fa-copy"></i>
+                            <span>Kopiuj Kod</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: CONFIGURATION -->
+            <div id="tab-config-view" class="tab-content hidden space-y-6">
+                <div class="bg-rbx-card border border-rbx-border rounded-xl p-6 space-y-6">
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-key text-amber-400"></i> Zgodność i Poświadczenia OAuth 2.0
+                        </h2>
+                        <p class="text-xs text-gray-400 mt-1">Zarządzaj kluczami wygenerowanymi w panelu Roblox Open Cloud Creator Dashboard.</p>
+                    </div>
+
+                    <form onsubmit="event.preventDefault(); updateCredentials();" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-300 mb-1">Roblox Client ID</label>
+                            <input type="text" id="inputClientId" value="6383567947279826865" class="w-full bg-rbx-panel border border-rbx-border rounded-lg px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-rbx-accent">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-gray-300 mb-1">Roblox Client Secret</label>
+                            <div class="relative">
+                                <input type="password" id="inputClientSecret" value="RBX-w-BsGFIqZk-2WI7915KT6LVf-opU5EsB7Hb9SlWEf8yJCX2Bq91ufGAQuDCeRl-l" class="w-full bg-rbx-panel border border-rbx-border rounded-lg px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-rbx-accent pr-10">
+                                <button type="button" onclick="toggleSecretVisibility()" class="absolute right-3 top-2.5 text-gray-400 hover:text-white text-xs">
+                                    <i id="secretEyeIcon" class="fa-solid fa-eye"></i>
+                                </button>
+                            </div>
+                            <p class="text-[10px] text-amber-400/80 mt-1"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Nigdy nie udostępniaj Client Secret w kodzie front-endu produkcyjnego!</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-gray-300 mb-1">Redirect URI (Callback URL)</label>
+                            <input type="text" id="inputRedirectUri" value="http://localhost:3000/oauth/callback" class="w-full bg-rbx-panel border border-rbx-border rounded-lg px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-rbx-accent">
+                            <p class="text-[10px] text-gray-400 mt-1">
+                                <i class="fa-solid fa-circle-info mr-1 text-rbx-accent"></i> Ten adres musi dokładnie zgadzać się z tym wygenerowanym w <a href="https://create.roblox.com/dashboard/credentials" target="_blank" class="text-rbx-accent underline">Roblox Creator Dashboard</a>.
+                            </p>
+                        </div>
+
+                        <div class="pt-2">
+                            <button type="submit" class="bg-rbx-accent hover:bg-rbx-accentHover text-white px-5 py-2.5 rounded-lg text-xs font-semibold transition flex items-center gap-2">
+                                <i class="fa-solid fa-floppy-disk"></i>
+                                <span>Zapisz Zmiany w Portalu</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-rbx-card border-t border-rbx-border py-4 text-center text-xs text-gray-500">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2">
+            <div>Roblox OAuth 2.0 Client Suite &bull; Identyfikator Aplikacji: <span class="font-mono text-gray-400">63835...6865</span></div>
+            <div class="flex gap-4">
+                <a href="https://create.roblox.com/dashboard/credentials" target="_blank" class="hover:text-rbx-accent">Roblox Creator Dashboard <i class="fa-solid fa-external-link text-[10px]"></i></a>
+                <a href="https://create.roblox.com/docs/cloud/oauth2/overview" target="_blank" class="hover:text-rbx-accent">Dokumentacja OAuth <i class="fa-solid fa-external-link text-[10px]"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Toast Notification Overlay -->
+    <div id="toast" class="fixed bottom-5 right-5 transform translate-y-20 opacity-0 transition-all duration-300 bg-rbx-card border border-rbx-accent text-white px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 z-50">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-rbx-green text-lg"></i>
+        <span id="toastMsg" class="text-xs font-medium">Pomyślnie zaktualizowano!</span>
+    </div>
+
+    <script>
+        // Configuration state
+        let config = {
+            clientId: "6383567947279826865",
+            clientSecret: "RBX-w-BsGFIqZk-2WI7915KT6LVf-opU5EsB7Hb9SlWEf8yJCX2Bq91ufGAQuDCeRl-l",
+            redirectUri: "http://localhost:3000/oauth/callback",
+            scopes: "openid profile"
+        };
+
+        // Current session state
+        let session = {
+            isLoggedIn: false,
+            codeVerifier: "",
+            codeChallenge: "",
+            state: "",
+            accessToken: null,
+            user: null
+        };
+
+        let currentActiveTab = 'dashboard';
+        let currentActiveLang = 'node';
+
+        function generateRandomString(length) {
+            const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+            let text = '';
+            for (let i = 0; i < length; i++) {
+                text += possible.charAt(Math.floor(Math.random() * possible.length));
+            }
+            return text;
+        }
+
+        async function generateCodeChallenge(codeVerifier) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(codeVerifier);
+            const digest = await window.crypto.subtle.digest('SHA-256', data);
+            
+            // Base64URL encoding
+            return btoa(String.fromCharCode.apply(null, new Uint8Array(digest)))
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=+$/, '');
+        }
+
+        async function generateNewPKCE() {
+            session.codeVerifier = generateRandomString(64);
+            session.codeChallenge = await generateCodeChallenge(session.codeVerifier);
+            session.state = generateRandomString(32);
+
+            document.getElementById('pkceVerifierVal').innerText = session.codeVerifier;
+            document.getElementById('pkceChallengeVal').innerText = session.codeChallenge;
+            document.getElementById('pkceStateVal').innerText = session.state;
+
+            const authUrl = `https://apis.roblox.com/oauth/v1/authorize?response_type=code&client_id=${config.clientId}&redirect_uri=${encodeURIComponent(config.redirectUri)}&scope=${encodeURIComponent(config.scopes)}&state=${session.state}&code_challenge=${session.codeChallenge}&code_challenge_method=S256`;
+            document.getElementById('authUrlVal').innerText = authUrl;
+        }
+
+        function switchTab(tabId) {
+            currentActiveTab = tabId;
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('bg-rbx-accent', 'text-white');
+                el.classList.add('text-gray-400', 'hover:text-white', 'hover:bg-rbx-panel');
+            });
+
+            document.getElementById(`tab-${tabId}-view`).classList.remove('hidden');
+            const activeNav = document.getElementById(`nav-${tabId}`);
+            if (activeNav) {
+                activeNav.classList.remove('text-gray-400', 'hover:text-white', 'hover:bg-rbx-panel');
+                activeNav.classList.add('bg-rbx-accent', 'text-white');
+            }
+        }
+
+        function switchLang(lang) {
+            currentActiveLang = lang;
+            document.querySelectorAll('.lang-tab').forEach(el => {
+                el.classList.remove('border-b-2', 'border-rbx-accent', 'text-rbx-accent', 'font-semibold');
+                el.classList.add('text-gray-400');
+            });
+
+            const activeBtn = document.getElementById(`lang-btn-${lang}`);
+            if (activeBtn) {
+                activeBtn.classList.add('border-b-2', 'border-rbx-accent', 'text-rbx-accent', 'font-semibold');
+                activeBtn.classList.remove('text-gray-400');
+            }
+
+            renderCodeSnippet();
+        }
+
+        function renderCodeSnippet() {
+            const box = document.getElementById('codeSnippetBox');
+            if (currentActiveLang === 'node') {
+                box.textContent = `// Node.js + Express Roblox OAuth 2.0 Implementation
+const express = require('express');
+const axios = require('axios');
+const app = express();
+
+const CLIENT_ID = "${config.clientId}";
+const CLIENT_SECRET = "${config.clientSecret}";
+const REDIRECT_URI = "${config.redirectUri}";
+
+// 1. Przekieruj użytkownika do logowania
+app.get('/login/roblox', (req, res) => {
+    const robloxAuthUrl = \`https://apis.roblox.com/oauth/v1/authorize?response_type=code&client_id=\${CLIENT_ID}&redirect_uri=\${encodeURIComponent(REDIRECT_URI)}&scope=openid%20profile\`;
+    res.redirect(robloxAuthUrl);
+});
+
+// 2. Obsłuż Callback z kodem autoryzacji
+app.get('/oauth/callback', async (req, res) => {
+    const { code } = req.query;
+    
+    try {
+        // Wymiana kodu na token dostępowy
+        const tokenResponse = await axios.post('https://apis.roblox.com/oauth/v1/token', 
+            new URLSearchParams({
+                grant_type: 'authorization_code',
+                client_id: CLIENT_ID,
+                client_secret: CLIENT_SECRET,
+                code: code,
+            }), {
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+            }
+        );
+
+        const { access_token } = tokenResponse.data;
+
+        // Pobranie profilu użytkownika Roblox
+        const userResponse = await axios.get('https://apis.roblox.com/oauth/v1/userinfo', {
+            headers: { Authorization: \`Bearer \${access_token}\` }
+        });
+
+        res.json({
+            status: 'Success',
+            user: userResponse.data
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.listen(3000, () => console.log('Serwer działa na http://localhost:3000'));`;
+            } else if (currentActiveLang === 'python') {
+                box.textContent = `# Python Flask Roblox OAuth 2.0 Integration
+import requests
+from flask import Flask, redirect, request, jsonify
+
+app = Flask(__name__)
+
+CLIENT_ID = "${config.clientId}"
+CLIENT_SECRET = "${config.clientSecret}"
+REDIRECT_URI = "${config.redirectUri}"
+
+@app.route("/login")
+def login():
+    roblox_url = f"https://apis.roblox.com/oauth/v1/authorize?response_type=code&client_id={CLIENT_ID}&redirect_uri={REDIRECT_URI}&scope=openid%20profile"
+    return redirect(roblox_url)
+
+@app.route("/callback")
+def callback():
+    code = request.args.get("code")
+    
+    # Wymiana code -> access_token
+    token_url = "https://apis.roblox.com/oauth/v1/token"
+    payload = {
+        "grant_type": "authorization_code",
+        "client_id": CLIENT_ID,
+        "client_secret": CLIENT_SECRET,
+        "code": code
+    }
+    headers = {"Content-Type": "application/x-www-form-urlencoded"}
+    
+    token_res = requests.post(token_url, data=payload, headers=headers).json()
+    access_token = token_res.get("access_token")
+    
+    # Pobierz dane konta Roblox
+    user_info = requests.get(
+        "https://apis.roblox.com/oauth/v1/userinfo",
+        headers={"Authorization": f"Bearer {access_token}"}
+    ).json()
+    
+    return jsonify({"status": "success", "roblox_user": user_info})
+
+if __name__ == "__main__":
+    app.run(port=5000)`;
+            } else if (currentActiveLang === 'luau') {
+                box.textContent = `-- Roblox Studio Luau Integration (HTTP Service)
+local HttpService = game:GetService("HttpService")
+
+local BACKEND_SERVER_URL = "https://twoja-domena.pl/api/verify-roblox-oauth"
+
+local function verifyOAuthSession(player, authToken)
+	local payload = HttpService:JSONEncode({
+		userId = player.UserId,
+		oauthToken = authToken
+	})
+	
+	local success, response = pcall(function()
+		return HttpService:PostAsync(BACKEND_SERVER_URL, payload, Enum.HttpContentType.ApplicationJson)
+	end)
+	
+	if success then
+		local data = HttpService:JSONDecode(response)
+		print("Zweryfikowano gracza:", data.user.preferred_username)
+		return data
+	else
+		warn("Błąd weryfikacji OAuth:", response)
+		return nil
+	end
+end`;
+            } else if (currentActiveLang === 'js') {
+                box.textContent = `// Browser JS PKCE Flow
+const CLIENT_ID = "${config.clientId}";
+const REDIRECT_URI = "${config.redirectUri}";
+
+async function loginWithRoblox() {
+    const verifier = generateRandomString(64);
+    const challenge = await generateCodeChallenge(verifier);
+    
+    sessionStorage.setItem('code_verifier', verifier);
+    
+    const url = \`https://apis.roblox.com/oauth/v1/authorize?\` +
+        \`response_type=code&\` +
+        \`client_id=\${CLIENT_ID}&\` +
+        \`redirect_uri=\${encodeURIComponent(REDIRECT_URI)}&\` +
+        \`scope=openid%20profile&\` +
+        \`code_challenge=\${challenge}&\` +
+        \`code_challenge_method=S256\`;
+        
+    // Otwarcie w nowym oknie z uwagi na X-Frame-Options Roblox
+    window.open(url, '_blank');
+}`;
+            }
+        }
+
+        function simulateMockLogin() {
+            session.isLoggedIn = true;
+            session.accessToken = "rbx_at_live_" + generateRandomString(24);
+            session.user = {
+                sub: "6383567947",
+                name: "BloxMaster_99",
+                preferred_username: "BloxMaster_99",
+                created_at: 1618224000,
+                profile: "https://www.roblox.com/users/638356794/profile",
+                picture: "https://placehold.co/120x120/00a2ff/ffffff?text=Roblox+Dev"
+            };
+
+            updateUIState();
+            showToast("Symulowane zalogowanie powiodło się!");
+        }
+
+        function logout() {
+            session.isLoggedIn = false;
+            session.accessToken = null;
+            session.user = null;
+            updateUIState();
+            showToast("Wylogowano z sesji Roblox", "info");
+        }
+
+        function updateUIState() {
+            const loggedOut = document.getElementById('loggedOutState');
+            const loggedIn = document.getElementById('loggedInState');
+            const headerStatus = document.getElementById('authStatusHeader');
+
+            if (session.isLoggedIn && session.user) {
+                loggedOut.classList.add('hidden');
+                loggedIn.classList.remove('hidden');
+
+                document.getElementById('userDisplayName').textContent = session.user.name;
+                document.getElementById('userUsername').textContent = `@${session.user.preferred_username}`;
+                document.getElementById('userIdVal').textContent = session.user.sub;
+                document.getElementById('userAvatarImg').src = session.user.picture;
+                document.getElementById('tokenDisplay').textContent = session.accessToken;
+
+                headerStatus.innerHTML = `
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                        <span class="w-2 h-2 mr-1.5 rounded-full bg-emerald-400"></span>
+                        Zalogowano: ${session.user.preferred_username}
+                    </span>
+                `;
+            } else {
+                loggedOut.classList.remove('hidden');
+                loggedIn.classList.add('hidden');
+
+                headerStatus.innerHTML = `
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                        <span class="w-2 h-2 mr-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                        Niezalogowany
+                    </span>
+                `;
+            }
+        }
+
+        async function executeStepByStep() {
+            // Step 1: PKCE
+            document.getElementById('step-1-box').className = 'p-3 bg-rbx-panel border-2 border-rbx-accent rounded-xl space-y-1';
+            document.getElementById('step-1-status').textContent = 'Pomyślnie wygenerowano';
+            
+            // Step 2: Roblox Auth
+            document.getElementById('step-2-box').className = 'p-3 bg-rbx-panel border-2 border-amber-400 rounded-xl space-y-1';
+            document.getElementById('step-2-status').textContent = 'Symulowanie autoryzacji...';
+            
+            await new Promise(r => setTimeout(r, 600));
+            document.getElementById('step-2-box').className = 'p-3 bg-rbx-panel border-2 border-rbx-green rounded-xl space-y-1';
+            document.getElementById('step-2-status').textContent = 'Kod przyznany';
+
+            // Step 3: Authorization Code
+            document.getElementById('step-3-box').className = 'p-3 bg-rbx-panel border-2 border-rbx-accent rounded-xl space-y-1';
+            document.getElementById('step-3-status').textContent = 'Wymiana kodu z Secretem...';
+
+            await new Promise(r => setTimeout(r, 600));
+            document.getElementById('step-3-box').className = 'p-3 bg-rbx-panel border-2 border-rbx-green rounded-xl space-y-1';
+            document.getElementById('step-3-status').textContent = 'Otrzymano Access Token';
+
+            // Step 4: UserInfo
+            document.getElementById('step-4-box').className = 'p-3 bg-rbx-panel border-2 border-rbx-green rounded-xl space-y-1';
+            document.getElementById('step-4-status').textContent = 'Profil pobrany!';
+
+            simulateMockLogin();
+            switchTab('dashboard');
+        }
+
+        function startOAuthFlow() {
+            const authUrl = `https://apis.roblox.com/oauth/v1/authorize?response_type=code&client_id=${config.clientId}&redirect_uri=${encodeURIComponent(config.redirectUri)}&scope=${encodeURIComponent(config.scopes)}&state=${session.state}&code_challenge=${session.codeChallenge}&code_challenge_method=S256`;
+            
+            showToast("Otwieranie strony autoryzacji Roblox w nowej karcie...", "info");
+            // Otwarcia w nowym oknie (omija ograniczenie frame-ancestors / iframe Gemini)
+            window.open(authUrl, '_blank');
+        }
+
+        function updateCredentials() {
+            config.clientId = document.getElementById('inputClientId').value;
+            config.clientSecret = document.getElementById('inputClientSecret').value;
+            config.redirectUri = document.getElementById('inputRedirectUri').value;
+
+            document.getElementById('sidebarClientId').textContent = config.clientId;
+            document.getElementById('sidebarRedirectUri').textContent = config.redirectUri;
+
+            generateNewPKCE();
+            renderCodeSnippet();
+            showToast("Zapisano poświadczenia Roblox OAuth!");
+        }
+
+        function toggleSecretVisibility() {
+            const input = document.getElementById('inputClientSecret');
+            const icon = document.getElementById('secretEyeIcon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        function copyGeneratedAuthUrl() {
+            const authUrl = document.getElementById('authUrlVal').innerText;
+            copyToClipboard(authUrl);
+            showToast("Skopiowano URL Autoryzacyjny Roblox!");
+        }
+
+        function copyCurrentCodeSnippet() {
+            const code = document.getElementById('codeSnippetBox').textContent;
+            copyToClipboard(code);
+            showToast("Skopiowano kod skryptu do schowka!");
+        }
+
+        function copyToClipboard(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMsg.textContent = message;
+            if (type === 'success') {
+                toastIcon.className = 'fa-solid fa-circle-check text-rbx-green text-lg';
+            } else {
+                toastIcon.className = 'fa-solid fa-circle-info text-rbx-accent text-lg';
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        window.addEventListener('load', async () => {
+            await generateNewPKCE();
+            renderCodeSnippet();
+        });
+    </script>
+</body>
+</html>
